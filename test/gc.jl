@@ -23,7 +23,7 @@ end
 gc_disable()
 fn = joinpath(tempdir(),"test.h5")
 for i = 1:10
-    file = h5open(fn, "w")
+    file = open(HDF5File, fn, "w")
     memtype_id = HDF5.h5t_create(HDF5.H5T_COMPOUND, 2*sizeof(Float64))
     HDF5.h5t_insert(memtype_id, "real", 0, HDF5.hdf5_type_id(Float64))
     HDF5.h5t_insert(memtype_id, "imag", sizeof(Float64), HDF5.hdf5_type_id(Float64))
@@ -50,7 +50,7 @@ for i = 1:10
     end
 end
 for i = 1:10
-    file = h5open(fn, "r")
+    file = open(HDF5File, fn, "r")
     dt = file["dt"]
     d = file["d"]
     ds = dataspace(d)

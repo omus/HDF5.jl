@@ -7,7 +7,7 @@ using HDF5, Compat
 # Add methods to...
 import HDF5: close, dump, exists, file, getindex, setindex!, g_create, g_open, o_delete, name, names, read, size, write,
              HDF5ReferenceObj, HDF5BitsKind, ismmappable, readmmap, open
-import Base: length, endof, show, done, next, start, delete!
+import Base: length, endof, show, done, next, start, delete!, warn_once
 import JLD
 
 if !isdefined(:setfield!)
@@ -174,16 +174,16 @@ function open(::Type{JldFile}, f::Function, args...)
 end
 
 function jldopen(filename::AbstractString, rd::Bool, wr::Bool, cr::Bool, tr::Bool, ff::Bool; mmaparrays::Bool=false)
-    # warn_once("jldopen is deprecated, use open(JldFile, ...) instead.")
+    warn_once("jldopen is deprecated, use open(JldFile, ...) instead.")
     open(JldFile, filename, rd, wr, cr, tr, ff; mmaparrays=mmaparrays)
 end
 
 function jldopen(fname::AbstractString, mode::AbstractString="r"; mmaparrays::Bool=false)
-    # warn_once("jldopen is deprecated, use open(JldFile, ...) instead.")
+    warn_once("jldopen is deprecated, use open(JldFile, ...) instead.")
     open(JldFile, fname, mode; mmaparrays=mmaparrays)
 
 function jldopen(f::Function, args...)
-    # warn_once("jldopen is deprecated, use open(JldFile, ...) instead.")
+    warn_once("jldopen is deprecated, use open(JldFile, ...) instead.")
     open(JldFile, f, args...)
 end
 
@@ -1058,7 +1058,7 @@ macro save(filename, vars...)
         end
     end
     Expr(:block,
-         :(local f = jldopen($(esc(filename)), "w")),
+         :(local f = open(JldFile, $(esc(filename)), "w")),
          Expr(:try, Expr(:block, writeexprs...), false, false,
               :(close(f))))
 end
@@ -1071,7 +1071,7 @@ macro load(filename, vars...)
         # Load all variables in the top level of the file
         readexprs = Array(Expr, 0)
         vars = Array(Expr, 0)
-        f = jldopen(filename)
+        f = open(JldFile, filename)
         nms = names(f)
         for n in nms
             obj = f[n]
@@ -1093,7 +1093,7 @@ macro load(filename, vars...)
         end
         return Expr(:block, 
                     Expr(:global, map(esc, vars)...),
-                    :(local f = jldopen($(esc(filename)))),
+                    :(local f = open(JldFile, $(esc(filename)))),
                     Expr(:try,  Expr(:block, readexprs...), false, false,
                          :(close(f))),
                     Symbol[v for v in vars]) # vars is a tuple
@@ -1102,7 +1102,7 @@ end
 
 # Save all the key-value pairs in the dict as top-level variables of the JLD
 function save(filename::AbstractString, dict::Associative)
-    jldopen(filename, "w") do file
+    open(JldFile, filename, "w") do file
         for (k,v) in dict
             write(file, bytestring(k), v)
         end
@@ -1113,7 +1113,7 @@ function save(filename::AbstractString, name::AbstractString, value, pairs...)
     if isodd(length(pairs)) || !isa(pairs[1:2:end], (AbstractString...)) 
         throw(ArgumentError("arguments must be in name-value pairs"))
     end
-    jldopen(filename, "w") do file
+    open(JldFile, filename, "w") do file
         write(file, bytestring(name), value)
         for i=1:2:length(pairs)
             write(file, bytestring(pairs[i]), pairs[i+1])
@@ -1123,19 +1123,19 @@ end
 
 # load with just a filename returns a dictionary containing all the variables
 function load(filename::AbstractString)
-    jldopen(filename, "r") do file
+    open(JldFile, filename, "r") do file
         (ByteString => Any)[var => read(file, var) for var in names(file)]
     end
 end
 # When called with explicitly requested variable names, return each one
 function load(filename::AbstractString, varname::AbstractString)
-    jldopen(filename, "r") do file
+    open(JldFile, filename, "r") do file
         read(file, varname)
     end
 end
 load(filename::AbstractString, varnames::AbstractString...) = load(filename, varnames)
 function load(filename::AbstractString, varnames::@compat Tuple{Vararg{AbstractString}})
-    jldopen(filename, "r") do file
+    open(JldFile, filename, "r") do file
         map((var)->read(file, var), varnames)
     end
 end
@@ -1155,6 +1155,7 @@ export
     ismmappable,
     jldopen,
     o_delete,
+    open,
     plain,
     readmmap,
     readsafely,

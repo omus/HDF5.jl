@@ -2,7 +2,7 @@ using HDF5, Compat
 
 fn = joinpath(tempdir(),"test.h5")
 
-fid = h5open(fn, "w")
+fid = open(HDF5File, fn, "w")
 g = g_create(fid, "shoe")
 d = d_create(g, "foo", datatype(Float64), ((10,20),(100,200)), "chunk", (1,1))
 #println("d is size current $(map(int,HDF5.get_dims(d)[1])) max $(map(int,HDF5.get_dims(d)[2]))")
@@ -38,7 +38,7 @@ b[1:10000] = [1:10000;]
 
 close(fid)
 
-fid = h5open(fn, "r")
+fid = open(HDF5File, fn, "r")
 d_again = fid["shoe/foo"]
 dims, max_dims = HDF5.get_dims(d_again)
 @assert dims==(ui64(1),ui64(5))

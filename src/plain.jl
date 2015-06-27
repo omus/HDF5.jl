@@ -10,7 +10,7 @@ using Compat: unsafe_convert
 ## Add methods to...
 import Base: close, convert, done, dump, eltype, endof, flush, getindex,
              isempty, isvalid, length, names, ndims, next, parent, read,
-             setindex!, show, size, sizeof, start, write
+             setindex!, show, size, sizeof, start, write, warn_once
 
 include("datafile.jl")
 
@@ -573,22 +573,22 @@ function open(::Type{HDF5File}, f::Function, args...)
 end
 
 function h5open(filename::AbstractString, rd::Bool, wr::Bool, cr::Bool, tr::Bool, ff::Bool)
-    # warn_once("h5open is deprecated, use open(HDF5File, ...) instead.")
+    warn_once("h5open is deprecated, use open(HDF5File, ...) instead.")
     open(HDF5File, filename, rd, wr, cr, tr, ff)
 end
 
 function h5open(filename::AbstractString, mode::AbstractString="r")
-    # warn_once("h5open is deprecated, use open(HDF5File, ...) instead.")
+    warn_once("h5open is deprecated, use open(HDF5File, ...) instead.")
     open(HDF5File, filename, mode)
 end
 
 function h5open(f::Function, args...)
-    # warn_once("h5open is deprecated, use open(HDF5File, ...) instead.")
+    warn_once("h5open is deprecated, use open(HDF5File, ...) instead.")
     open(HDF5File, f, args...)
 end
 
 function h5write(filename, name::ByteString, data)
-    fid = h5open(filename, true, true, true, false, true)
+    fid = open(HDF5File, filename, true, true, true, false, true)
     try
         write(fid, name, data)
     finally
@@ -598,7 +598,7 @@ end
 
 function h5read(filename, name::ByteString)
     local dat
-    fid = h5open(filename, "r")
+    fid = open(HDF5File, filename, "r")
     try
         dat = read(fid, name)
     finally
@@ -609,7 +609,7 @@ end
 
 function h5read(filename, name::ByteString, indices::@compat Tuple{Vararg{Union(Range{Int},Int,Colon)}})
     local dat
-    fid = h5open(filename, "r")
+    fid = open(HDF5File, filename, "r")
     try
         dset = fid[name]
         dat = dset[indices...]
@@ -618,6 +618,8 @@ function h5read(filename, name::ByteString, indices::@compat Tuple{Vararg{Union(
     end
     dat
 end
+
+
 
 # Ensure that objects haven't been closed
 isvalid(obj::Union(HDF5File, HDF5Properties, HDF5Datatype, HDF5Dataspace)) = obj.id != -1 && h5i_is_valid(obj.id)
@@ -2250,6 +2252,7 @@ export
     o_copy,
     o_delete,
     o_open,
+    open,
     p_create,
     parent,
     plain,

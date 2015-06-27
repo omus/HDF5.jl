@@ -15,7 +15,7 @@ JLD is built on top of HDF5, which is why you need to import HDF5 first.
 
 \*.jld files are created or opened in the following way:
 ```julia
-file = jldopen("mydata.jld", "w")
+file = open(JldFile, "mydata.jld", "w")
 @write file A
 close(file)
 ```
@@ -24,7 +24,7 @@ There are also the convenient `save("mydata.jld", "A", A)` or `@save "mydata.jld
 
 You may also use an array like syntax
 ```julia
-file = jldopen("mydata.jld", "w")
+file = open(JldFile, "mydata.jld", "w")
 file["a"] = [1:100]
 b = file["a"][20:30]
 close(file)
@@ -32,7 +32,7 @@ close(file)
 Use the `delete!` function to delete `JldDataset`s and their associated references.  Directly deleting a `JldDataset` with `o_delete` will leave behind unwanted objects that may cause future errors, especially if you reuse the same path in the JLD file. 
 
 To specify compression, use the `compress` keyword argument to
-`jldopen` or `save`, e.g. `jldopen("mydata.jld", "w", compress=true)`
+`open` or `save`, e.g. `open(JldFile, "mydata.jld", "w", compress=true)`
 or `save("mydata.jld", "A", A, compress=true)`.  This uses
 [Blosc](http://www.blosc.org/) compression, which imposes very little
 performance penalty.  (The `compress` keyword need not be specified
@@ -42,13 +42,13 @@ automatically decompressed when they are read.)
 JLD files can be opened with the `mmaparrays` option, which if true returns "qualified" array data sets as arrays using [memory-mapping](hdf5.md#memory-mapping):
 
 ```julia
-file = jldopen("mydata.jld", "r", mmaparrays=true)
+file = open(JldFile, "mydata.jld", "r", mmaparrays=true)
 y = read(file, "y")   # y will be a mmapped array, not read immediately in its entirety
 ```
 
 Provided that you've said `using HDF5`, the features described for the HDF5 module work for \*.jld files, too. For example:
 ```julia
-julia> fidr = jldopen("/tmp/test.jld","r");
+julia> fidr = open(JldFile, "/tmp/test.jld","r");
 
 julia> dump(fidr, 20)
 JldFile len 19
@@ -89,7 +89,7 @@ end
 and you have an object `x` of type `MyType`. Then save `x` in the following way:
 
 ```
-jldopen("somedata.jld", "w") do file
+open(JldFile, "somedata.jld", "w") do file
     addrequire(file, "MyTypes")
     write(file, "x", x)
 end
@@ -103,7 +103,7 @@ module A
         using HDF5, JLD
         include("MyTypes.jl")
         x = MyTypes.MyType(7)      # Full module path is A.B.MyTypes.MyType
-        jldopen("test.jld", "w") do file
+        open(JldFile, "test.jld", "w") do file
             addrequire(file, "MyTypes")
             write(file, "x", x, rootmodule="B")  # truncate up to and including B, so path is MyTypes.MyType
         end
@@ -118,7 +118,7 @@ This is intended as a brief "reference standard" describing the structure of the
 
 ### Major structural elements
 
-- Files created using `jldopen` have a 512-byte header, which begins with a sequence of characters similar to "Julia data file (HDF5), version 0.0.0".  However, note that we also support opening a pre-existing "plain" HDF5 file with `jldopen(filename, "r+")`; new items will be written using *.jld formatting conventions. Such files will lack the 512-byte header.
+- Files created using `open` have a 512-byte header, which begins with a sequence of characters similar to "Julia data file (HDF5), version 0.0.0".  However, note that we also support opening a pre-existing "plain" HDF5 file with `open(JldFile, filename, "r+")`; new items will be written using *.jld formatting conventions. Such files will lack the 512-byte header.
 - Each Julia object is stored as a dataset; groups are intentionally saved for "user structure." Complex objects are therefore stored by making use of HDF5's reference features. To support referencing, there are two reserved group names, `/_refs` and `/_types` (see below).
 - Each dataset has at least a `julia_type` attribute, consisting of a string used to encode its type. Other reserved attribute names: `julia_format`, `CompositeKind`, `Module`, `TypeParameters`. (The last three are specific to writing `CompositeKind`s.)
 

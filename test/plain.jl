@@ -3,7 +3,7 @@ const test_path = splitdir(@__FILE__)[1]
 
 # Create a new file
 fn = joinpath(tempdir(),"test.h5")
-f = h5open(fn, "w")
+f = open(HDF5File, fn, "w")
 # Write scalars
 f["Float64"] = 3.2
 f["Int16"] = @compat Int16(4)
@@ -94,7 +94,7 @@ W = reshape(1:120, 15, 8)
 h5write(fn, "newgroup/W", W)
 
 # Read the file back in
-fr = h5open(fn)
+fr = open(HDF5File, fn)
 x = read(fr, "Float64")
 @assert x == 3.2 && isa(x, Float64)
 y = read(fr, "Int16")
@@ -202,7 +202,7 @@ z = read(fr)
 close(fr)
 
 # Test object deletion
-fr = h5open(fn, "r+")
+fr = open(HDF5File, fn, "r+")
 @assert exists(fr, "deleteme")
 o_delete(fr, "deleteme")
 @assert !exists(fr, "deleteme")
@@ -216,12 +216,12 @@ Wr = h5read(fn, "newgroup/W", rng)
 @assert Wr == W[rng...]
 
 # more do syntax
-h5open(fn, "w") do fid
+open(HDF5File, fn, "w") do fid
     g_create(fid, "mygroup") do g
         write(g, "x", 3.2)
     end
 end
-fid = h5open(fn, "r")
+fid = open(HDF5File, fn, "r")
 @assert names(fid) == ASCIIString["mygroup"]
 g = fid["mygroup"]
 @assert names(g) == ASCIIString["x"]

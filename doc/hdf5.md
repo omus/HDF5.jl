@@ -17,10 +17,10 @@ Language wrappers for HDF5 are often described as either "low level" or "high le
 Opening and closing files
 -------------------------
 
-"Plain" (i.e., with no extra formatting conventions) HDF5 files are created and/or opened with the `h5open` command:
+"Plain" (i.e., with no extra formatting conventions) HDF5 files are created and/or opened with the `open` command:
 
 ```julia
-fid = h5open(filename, mode)
+fid = open(HDF5File, filename, mode)
 ```
 
 The mode can be any one of the following:

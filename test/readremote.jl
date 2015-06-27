@@ -59,48 +59,48 @@ function getfile(name)
 end
 
 file = getfile("h5ex_t_floatatt.h5")
-fid = h5open(file, "r")
+fid = open(HDF5File, file, "r")
 dset = fid["DS1"]
 a = a_read(dset, "A1")
 @assert norm(a - fcmp) < 1e-5
 close(fid)
 
 file = getfile("h5ex_t_float.h5")
-fid = h5open(file, "r")
+fid = open(HDF5File, file, "r")
 d = read(fid, "DS1")
 @assert norm(d - fcmp) < 1e-5
 close(fid)
 
 file = getfile("h5ex_t_intatt.h5")
-fid = h5open(file, "r")
+fid = open(HDF5File, file, "r")
 dset = fid["DS1"]
 a = a_read(dset, "A1")
 @assert a == icmp
 close(fid)
 
 file = getfile("h5ex_t_int.h5")
-fid = h5open(file, "r")
+fid = open(HDF5File, file, "r")
 d = read(fid, "DS1")
 @assert d == icmp
 close(fid)
 
 if HDF5.h5_get_libversion() >= (1, 8, 11)
   file = getfile("h5ex_t_enumatt.h5")
-  fid = h5open(file, "r")
+  fid = open(HDF5File, file, "r")
   dset = fid["DS1"]
   a = a_read(dset, "A1")
   @assert a == ecmp
   close(fid)
 
   file = getfile("h5ex_t_enum.h5")
-  fid = h5open(file, "r")
+  fid = open(HDF5File, file, "r")
   d = read(fid, "DS1")
   @assert d == ecmp
   close(fid)
 end
 
 file = getfile("h5ex_t_objrefatt.h5")
-fid = h5open(file, "r")
+fid = open(HDF5File, file, "r")
 dset = fid["DS1"]
 a = a_read(dset, "A1")
 g = fid[a[1]]
@@ -112,7 +112,7 @@ ds2v = read(ds2)
 close(fid)
 
 file = getfile("h5ex_t_objref.h5")
-fid = h5open(file, "r")
+fid = open(HDF5File, file, "r")
 d = read(fid, "DS1")
 g = fid[d[1]]
 @assert isa(g, HDF5Group)
@@ -123,46 +123,46 @@ ds2v = read(ds2)
 close(fid)
 
 file = getfile("h5ex_t_stringatt.h5")
-fid = h5open(file, "r")
+fid = open(HDF5File, file, "r")
 dset = fid["DS1"]
 a = a_read(dset, "A1")
 @assert a == scmp
 close(fid)
 
 file = getfile("h5ex_t_string.h5")
-fid = h5open(file, "r")
+fid = open(HDF5File, file, "r")
 d = read(fid, "DS1")
 @assert d == scmp
 close(fid)
 
 file = getfile("h5ex_t_vlenatt.h5")
-fid = h5open(file, "r")
+fid = open(HDF5File, file, "r")
 dset = fid["DS1"]
 a = a_read(dset, "A1")
 @assert a == vicmp
 close(fid)
 
 file = getfile("h5ex_t_vlen.h5")
-fid = h5open(file, "r")
+fid = open(HDF5File, file, "r")
 d = read(fid, "DS1")
 @assert d == vicmp
 close(fid)
 
 file = getfile("h5ex_t_vlstringatt.h5")
-fid = h5open(file, "r")
+fid = open(HDF5File, file, "r")
 dset = fid["DS1"]
 a = a_read(dset, "A1")
 @assert a == scmp
 close(fid)
 
 file = getfile("h5ex_t_vlstring.h5")
-fid = h5open(file, "r")
+fid = open(HDF5File, file, "r")
 d = read(fid, "DS1")
 @assert d == scmp
 close(fid)
 
 file = getfile("h5ex_t_opaqueatt.h5")
-fid = h5open(file, "r")
+fid = open(HDF5File, file, "r")
 dset = fid["DS1"]
 a = a_read(dset, "A1")
 @assert a.tag == "Character array"
@@ -170,14 +170,14 @@ a = a_read(dset, "A1")
 close(fid)
 
 file = getfile("h5ex_t_opaque.h5")
-fid = h5open(file, "r")
+fid = open(HDF5File, file, "r")
 d = read(fid, "DS1")
 @assert d.tag == "Character array"
 @assert d.data == opq
 close(fid)
 
 file = getfile("h5ex_t_array.h5")
-fid = h5open(file, "r")
+fid = open(HDF5File, file, "r")
 A = read(fid, "DS1")
 @assert A == AA
 close(fid)

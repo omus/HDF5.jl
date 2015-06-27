@@ -119,16 +119,16 @@ where the last line reads back just `A[2:3:15, 3:5]` from the dataset.
 More fine-grained control can be obtained using functional syntax:
 
 ```julia
-jldopen("mydata.jld", "w") do file
+open(JldFile, "mydata.jld", "w") do file
     write(file, "A", A)  # alternatively, say "@write file A"
 end
 
-c = jldopen("mydata.jld", "r") do file
+c = open(JldFile, "mydata.jld", "r") do file
     read(file, "A")
 end
 ```
 This allows you to add variables as they are generated to an open JLD file.
-You don't have to use the `do` syntax (`file = jldopen("mydata.jld", "w")` works
+You don't have to use the `do` syntax (`file = open(JldFile, "mydata.jld", "w")` works
 just fine), but an advantage is that it will automatically close the file (`close(file)`)
 for you, even in cases of error.
 
@@ -139,7 +139,7 @@ HDF5 interface:
 ```julia
 using HDF5
 
-h5open("test.h5", "w") do file
+open(HDF5File, "test.h5", "w") do file
     g = g_create(file, "mygroup") # create a group
     g["dset1"] = 3.2              # create a scalar dataset inside the group
     attrs(g)["Description"] = "This group contains only a single dataset" # an attribute

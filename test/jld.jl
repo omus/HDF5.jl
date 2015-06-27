@@ -281,19 +281,19 @@ end
 
 
 # test mmapping of small arrays (Issue #192)
-fid = jldopen(fn, "w", mmaparrays = true)
+fid = open(JldFile, fn, "w", mmaparrays = true)
 write(fid, "a", [1:3;])
 @test ismmappable(fid["a"])
 close(fid)
 rm(fn)
 
-fid = jldopen(fn, "w", mmaparrays=false)
+fid = open(JldFile, fn, "w", mmaparrays=false)
 write(fid, "a", [1:3;]; mmap = true)
 @test ismmappable(fid["a"])
 close(fid)
 rm(fn)
 
-fid = jldopen(fn, "w", compress = true)
+fid = open(JldFile, fn, "w", compress = true)
 write(fid, "a", [1:3;])
 @test ismmappable(fid["a"]) == false
 close(fid)
@@ -301,7 +301,7 @@ rm(fn)
 
  
 for compress in (true,false)
-    fid = jldopen(fn, "w", compress=compress)
+    fid = open(JldFile, fn, "w", compress=compress)
     @write fid x
     @write fid A
     @write fid Aarray
@@ -405,7 +405,7 @@ for compress in (true,false)
 
     # mmapping currently fails on Windows; re-enable once it can work
     for mmap = (@windows ? false : (false, true))
-        fidr = jldopen(fn, "r", mmaparrays=mmap)
+        fidr = open(JldFile, fn, "r", mmaparrays=mmap)
         @check fidr x
         @check fidr A
         dsetA = fidr["A"]
@@ -539,7 +539,7 @@ for compress in (false,true)
     a = [x, x]
     b = [x, x]
     @save fn a b
-    jldopen(fn, "r") do fid
+    open(JldFile, fn, "r") do fid
         a = read(fid, "a")
         b = read(fid, "b")
         @test a[1] === a[2] === b[2] === a[1]
@@ -556,12 +556,12 @@ for compress in (false,true)
     end
     
     # do syntax
-    jldopen(fn, "w"; compress=compress) do fid
+    open(JldFile, fn, "w"; compress=compress) do fid
         g_create(fid, "mygroup") do g
             write(g, "x", 3.2)
         end
     end
-    fid = jldopen(fn, "r")
+    fid = open(JldFile, fn, "r")
     @assert names(fid) == ASCIIString["mygroup"]
     g = fid["mygroup"]
     @assert names(g) == ASCIIString["x"]
@@ -585,10 +585,10 @@ for compress in (false,true)
     @assert d == d3
     
     # #71
-    jldopen(fn, "w", compress=compress) do file
+    open(JldFile, fn, "w", compress=compress) do file
         file["a"] = 1
     end
-    jldopen(fn, "r") do file
+    open(JldFile, fn, "r") do file
         @assert read(file, "a") == 1
     end
     
@@ -598,13 +598,13 @@ for compress in (false,true)
     @assert i106 == Mod106.typ(@compat(Int64(1)), Mod106.UnexportedT)
     
     # bracket syntax for datasets
-    jldopen(fn, "w", compress=compress) do file
+    open(JldFile, fn, "w", compress=compress) do file
         file["a"] = [1:100;]
         file["b"] = [x*y for x=1:10,y=1:10]
         file["c"] = Any[1, 2, 3]
         file["d"] = [1//2, 1//4, 1//8]
     end
-    jldopen(fn, "r+", compress=compress) do file
+    open(JldFile, fn, "r+", compress=compress) do file
         @test(file["a"][1:50] == [1:50;])
         file["a"][1:50] = 1:2:100
         @test(file["a"][1:50] == [1:2:100;])
@@ -620,26 +620,26 @@ for compress in (false,true)
     # bracket syntax when created by HDF5
     println("The following unrecognized JLD file warning is a sign of normal operation.")
     if compress
-        h5open(fn, "w") do file
+        open(HDF5File, fn, "w") do file
             file["a", "blosc",5] = [1:100;]
             file["a"][51:100] = [1:50;]
             file["b", "blosc",5] = [x*y for x=1:10,y=1:10]
         end
     else
-        h5open(fn, "w") do file
+        open(HDF5File, fn, "w") do file
             file["a"] = [1:100;]
             file["a"][51:100] = [1:50;]
             file["b"] = [x*y for x=1:10,y=1:10]
         end
     end
-    jldopen(fn, "r") do file
+    open(JldFile, fn, "r") do file
         @assert(file["a"][1:50] == [1:50;])
         @assert(file["a"][:] == [1:50;1:50])
         @assert(file["b"][5,6][1]==5*6)
     end
     
     # delete!
-    jldopen(fn, "w", compress=compress) do file
+    open(JldFile, fn, "w", compress=compress) do file
         file["ms"] = ms
         delete!(file, "ms")
         file["ms"] = β
@@ -659,7 +659,7 @@ for compress in (false,true)
         g["ms"] = ms
         delete!(g)
     end
-    jldopen(fn, "r") do file
+    open(JldFile, fn, "r") do file
         @assert(read(file["ms"]) == β)
         @assert(!exists(file, "g/ms"))
         @assert(!exists(file, "g"))
@@ -697,7 +697,7 @@ immutable TestType8
     d::TestType7
 end
 
-jldopen(fn, "w") do file
+open(JldFile, fn, "w") do file
     truncate_module_path(file, JLDTemp1)
     write(file, "x1", TestType1(1))
     write(file, "x2", TestType3(TestType2(1)))
@@ -726,7 +726,7 @@ immutable TestType3
 end
 
 import Core.Intrinsics.box, Core.Intrinsics.unbox
-jldopen(fn, "r") do file
+open(JldFile, fn, "r") do file
     @test_throws JLD.TypeMismatchException read(file, "x1")
     @test_throws MethodError read(file, "x2")
     println("The following missing type warnings are a sign of normal operation.")
@@ -766,7 +766,7 @@ exx = quote
     end
 end
 for i = 1:2
-    fid = jldopen(fn, "w")
+    fid = open(JldFile, fn, "w")
     @write fid exx
     close(fid)
 end
@@ -774,7 +774,7 @@ end
 # Issue #226
 t1 = mtime(fn)
 sleep(3)
-jldopen(fn, "r") do file
+open(JldFile, fn, "r") do file
 end
 t2 = mtime(fn)
 @test t2 == t1
