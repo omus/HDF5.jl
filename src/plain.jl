@@ -536,7 +536,7 @@ heuristic_chunk(x) = Int[]
 
 ### High-level interface ###
 # Open or create an HDF5 file
-function open(::Type{HDF5File}, filename::AbstractString, rd::Bool, wr::Bool, cr::Bool, tr::Bool, ff::Bool)
+function Base.open(::Type{HDF5File}, filename::AbstractString, rd::Bool, wr::Bool, cr::Bool, tr::Bool, ff::Bool)
     if ff && !wr
         error("HDF5 does not support appending without writing")
     end
@@ -554,7 +554,7 @@ function open(::Type{HDF5File}, filename::AbstractString, rd::Bool, wr::Bool, cr
     HDF5File(fid, filename)
 end
 
-function open(t::Type{HDF5File}, filename::AbstractString, mode::AbstractString="r")
+function Base.open(t::Type{HDF5File}, filename::AbstractString, mode::AbstractString="r")
     mode == "r"  ? open(t, filename, true,  false, false, false, false) :
     mode == "r+" ? open(t, filename, true,  true , false, false, true)  :
     mode == "w"  ? open(t, filename, false, true , true , true,  false)  :
@@ -563,7 +563,7 @@ function open(t::Type{HDF5File}, filename::AbstractString, mode::AbstractString=
     error("invalid open mode: ", mode)
 end
 
-function open(::Type{HDF5File}, f::Function, args...)
+function Base.open(::Type{HDF5File}, f::Function, args...)
     fid = open(HDF5File, args...)
     try
         f(fid)

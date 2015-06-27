@@ -144,7 +144,7 @@ end
 close(g::Union(JldGroup, JldDataset)) = close(g.plain)
 show(io::IO, fid::JldFile) = isvalid(fid.plain) ? print(io, "Julia data file version ", fid.version, ": ", fid.plain.filename) : print(io, "Julia data file (closed): ", fid.plain.filename)
 
-function open(::Type{JldFile}, filename::AbstractString, rd::Bool, wr::Bool, cr::Bool, tr::Bool, ff::Bool; mmaparrays::Bool=false, compress::Bool=false)
+function Base.open(::Type{JldFile}, filename::AbstractString, rd::Bool, wr::Bool, cr::Bool, tr::Bool, ff::Bool; mmaparrays::Bool=false, compress::Bool=false)
     local fj
     if ff && !wr
         error("Cannot append to a write-only file")
@@ -217,7 +217,7 @@ function open(::Type{JldFile}, filename::AbstractString, rd::Bool, wr::Bool, cr:
     return fj
 end
 
-function open(t::Type{JldFile}, fname::AbstractString, mode::AbstractString="r"; mmaparrays::Bool=false, compress::Bool=false)
+function Base.open(t::Type{JldFile}, fname::AbstractString, mode::AbstractString="r"; mmaparrays::Bool=false, compress::Bool=false)
     mode == "r"  ? open(t, fname, true , false, false, false, false, mmaparrays=mmaparrays, compress=compress) :
     mode == "r+" ? open(t, fname, true , true , false, false, false, mmaparrays=mmaparrays, compress=compress) :
     mode == "w"  ? open(t, fname, false, true , true , true , false, mmaparrays=mmaparrays, compress=compress) :
@@ -227,7 +227,7 @@ function open(t::Type{JldFile}, fname::AbstractString, mode::AbstractString="r";
     error("invalid open mode: ", mode)
 end
 
-function open(::Type{JldFile}, f::Function, args...; kws...)
+function Base.open(::Type{JldFile}, f::Function, args...; kws...)
     jld = open(JldFile, args...; kws...)
     try
         f(jld)
