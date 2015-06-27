@@ -536,7 +536,7 @@ heuristic_chunk(x) = Int[]
 
 ### High-level interface ###
 # Open or create an HDF5 file
-function h5open(filename::AbstractString, rd::Bool, wr::Bool, cr::Bool, tr::Bool, ff::Bool)
+function open(::Type{HDF5File}, filename::AbstractString, rd::Bool, wr::Bool, cr::Bool, tr::Bool, ff::Bool)
     if ff && !wr
         error("HDF5 does not support appending without writing")
     end
@@ -554,21 +554,37 @@ function h5open(filename::AbstractString, rd::Bool, wr::Bool, cr::Bool, tr::Bool
     HDF5File(fid, filename)
 end
 
-function h5open(filename::AbstractString, mode::AbstractString="r")
-    mode == "r"  ? h5open(filename, true,  false, false, false, false) :
-    mode == "r+" ? h5open(filename, true,  true , false, false, true)  :
-    mode == "w"  ? h5open(filename, false, true , true , true,  false)  :
-#     mode == "w+" ? h5open(filename, true,  true , true , true,  false)  :
-#     mode == "a"  ? h5open(filename, true,  true , true , true,  true)   :
+function open(t::Type{HDF5File}, filename::AbstractString, mode::AbstractString="r")
+    mode == "r"  ? open(t, filename, true,  false, false, false, false) :
+    mode == "r+" ? open(t, filename, true,  true , false, false, true)  :
+    mode == "w"  ? open(t, filename, false, true , true , true,  false)  :
+#     mode == "w+" ? open(t, filename, true,  true , true , true,  false)  :
+#     mode == "a"  ? open(t, filename, true,  true , true , true,  true)   :
     error("invalid open mode: ", mode)
 end
-function h5open(f::Function, args...)
-    fid = h5open(args...)
+
+function open(::Type{HDF5File}, f::Function, args...)
+    fid = open(HDF5File, args...)
     try
         f(fid)
     finally
         close(fid)
     end
+end
+
+function h5open(filename::AbstractString, rd::Bool, wr::Bool, cr::Bool, tr::Bool, ff::Bool)
+    # warn_once("h5open is deprecated, use open(HDF5File, ...) instead.")
+    open(HDF5File, filename, rd, wr, cr, tr, ff)
+end
+
+function h5open(filename::AbstractString, mode::AbstractString="r")
+    # warn_once("h5open is deprecated, use open(HDF5File, ...) instead.")
+    open(HDF5File, filename, mode)
+end
+
+function h5open(f::Function, args...)
+    # warn_once("h5open is deprecated, use open(HDF5File, ...) instead.")
+    open(HDF5File, f, args...)
 end
 
 function h5write(filename, name::ByteString, data)

@@ -6,7 +6,7 @@ module JLD00
 using HDF5, Compat
 # Add methods to...
 import HDF5: close, dump, exists, file, getindex, setindex!, g_create, g_open, o_delete, name, names, read, size, write,
-             HDF5ReferenceObj, HDF5BitsKind, ismmappable, readmmap
+             HDF5ReferenceObj, HDF5BitsKind, ismmappable, readmmap, open
 import Base: length, endof, show, done, next, start, delete!
 import JLD
 
@@ -78,7 +78,7 @@ function close(f::JldFile)
             magic = zeros(UInt8, 512)
             tmp = string(magic_base, f.version)
             magic[1:length(tmp)] = tmp.data
-            rawfid = open(f.plain.filename, "r+")
+            rawfid = Base.open(f.plain.filename, "r+")
             write(rawfid, magic)
             close(rawfid)
         end
@@ -89,7 +89,7 @@ end
 close(g::Union(JldGroup, JldDataset)) = close(g.plain)
 show(io::IO, fid::JldFile) = isvalid(fid.plain) ? print(io, "Julia data file version ", fid.version, ": ", fid.plain.filename) : print(io, "Julia data file (closed): ", fid.plain.filename)
 
-function jldopen(filename::AbstractString, rd::Bool, wr::Bool, cr::Bool, tr::Bool, ff::Bool; mmaparrays::Bool=false)
+function open(::Type{JldFile}, filename::AbstractString, rd::Bool, wr::Bool, cr::Bool, tr::Bool, ff::Bool; mmaparrays::Bool=false)
     local fj
     if ff && !wr
         error("Cannot append to a write-only file")
@@ -122,7 +122,7 @@ function jldopen(filename::AbstractString, rd::Bool, wr::Bool, cr::Bool, tr::Boo
                 error("File size indicates $filename cannot be a Julia data file")
             end
             magic = Array(UInt8, 512)
-            rawfid = open(filename, "r")
+            rawfid = Base.open(filename, "r")
             try
                 magic = read!(rawfid, magic)
             finally
@@ -142,7 +142,7 @@ function jldopen(filename::AbstractString, rd::Bool, wr::Bool, cr::Bool, tr::Boo
             else
                 if ishdf5(filename)
                     println("$filename is an HDF5 file, but it is not a recognized Julia data file. Opening anyway.")
-                    fj = JldFile(h5open(filename, rd, wr, cr, tr, ff), version_current, true, false, mmaparrays)
+                    fj = JldFile(open(HDF5File, filename, rd, wr, cr, tr, ff), version_current, true, false, mmaparrays)
                 else
                     error("$filename does not seem to be a Julia data or HDF5 file")
                 end
@@ -154,23 +154,37 @@ function jldopen(filename::AbstractString, rd::Bool, wr::Bool, cr::Bool, tr::Boo
     return fj
 end
 
-function jldopen(fname::AbstractString, mode::AbstractString="r"; mmaparrays::Bool=false)
-    mode == "r"  ? jldopen(fname, true , false, false, false, false, mmaparrays=mmaparrays) :
-    mode == "r+" ? jldopen(fname, true , true , false, false, false, mmaparrays=mmaparrays) :
-    mode == "w"  ? jldopen(fname, false, true , true , true , false, mmaparrays=mmaparrays) :
-#     mode == "w+" ? jldopen(fname, true , true , true , true , false) :
-#     mode == "a"  ? jldopen(fname, false, true , true , false, true ) :
-#     mode == "a+" ? jldopen(fname, true , true , true , false, true ) :
+function open(t::Type{JldFile}, fname::AbstractString, mode::AbstractString="r"; mmaparrays::Bool=false)
+    mode == "r"  ? open(t, fname, true , false, false, false, false, mmaparrays=mmaparrays) :
+    mode == "r+" ? open(t, fname, true , true , false, false, false, mmaparrays=mmaparrays) :
+    mode == "w"  ? open(t, fname, false, true , true , true , false, mmaparrays=mmaparrays) :
+#     mode == "w+" ? open(t, fname, true , true , true , true , false) :
+#     mode == "a"  ? open(t, fname, false, true , true , false, true ) :
+#     mode == "a+" ? open(t, fname, true , true , true , false, true ) :
     error("invalid open mode: ", mode)
 end
 
-function jldopen(f::Function, args...)
-    jld = jldopen(args...)
+function open(::Type{JldFile}, f::Function, args...)
+    jld = open(JldFile, args...)
     try
         f(jld)
     finally
         close(jld)
     end
+end
+
+function jldopen(filename::AbstractString, rd::Bool, wr::Bool, cr::Bool, tr::Bool, ff::Bool; mmaparrays::Bool=false)
+    # warn_once("jldopen is deprecated, use open(JldFile, ...) instead.")
+    open(JldFile, filename, rd, wr, cr, tr, ff; mmaparrays=mmaparrays)
+end
+
+function jldopen(fname::AbstractString, mode::AbstractString="r"; mmaparrays::Bool=false)
+    # warn_once("jldopen is deprecated, use open(JldFile, ...) instead.")
+    open(JldFile, fname, mode; mmaparrays=mmaparrays)
+
+function jldopen(f::Function, args...)
+    # warn_once("jldopen is deprecated, use open(JldFile, ...) instead.")
+    open(JldFile, f, args...)
 end
 
 function jldobject(obj_id::HDF5.Hid, parent)
@@ -1134,6 +1148,9 @@ function addrequire(file::JldFile, filename::AbstractString)
 end
 
 export
+    # Types
+    JldFile,
+    # Functions
     addrequire,
     ismmappable,
     jldopen,
